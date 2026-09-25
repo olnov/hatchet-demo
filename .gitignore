@@ -22,3 +22,7 @@ Thumbs.db
 # логи
 *.log
 npm-debug.log*
+
+# фронт живёт своим Vite, у него свой node_modules
+apps/web/node_modules/
+apps/web/dist/

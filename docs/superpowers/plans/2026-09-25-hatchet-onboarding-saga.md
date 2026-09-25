@@ -53,6 +53,9 @@ PostgreSQL 17, Hatchet Lite в Docker.
   в ответах API.
 - У каждого шага саги есть `desiredWorkerLabels` с `required: true`.
   Шаг без метки — ошибка ревью.
+- Тест-раннер — **vitest** (NestJS 12 генерирует его вместо jest).
+  `*.spec.ts` идут в `npm test`, `*.e2e-spec.ts` — в `npm run test:e2e`
+  (`vitest.config.e2e.ts`). `@nestjs/cli` — 12.0.7, версии 12.1.0 у CLI нет.
 - `node_modules` только в корне Nest-монорепо; у `apps/web` свой,
   добавить `apps/web/node_modules/` в `.gitignore`.
 - Файл `.env` в git не попадает (уже в `.gitignore`). Все новые
@@ -217,7 +220,7 @@ describe('person health', () => {
 
 - [ ] **Step 4: Убедиться, что тест падает**
 
-Run: `npx jest apps/person/test/health.e2e-spec.ts`
+Run: `npx vitest run --config vitest.config.e2e.ts apps/person/test/health.e2e-spec.ts`
 Expected: FAIL, 404 вместо 200.
 
 - [ ] **Step 5: Добавить контроллер здоровья в оба сервиса**
@@ -243,7 +246,7 @@ export class HealthController {
 Скопировать тест из шага 3 в `apps/profile/test/health.e2e-spec.ts`,
 поменяв ожидание на `service: 'profile'`.
 
-Run: `npx jest apps/person apps/profile`
+Run: `npx vitest run --config vitest.config.e2e.ts`
 Expected: PASS, 2 теста.
 
 - [ ] **Step 7: Порты, CORS и `.env.example`**
@@ -391,7 +394,7 @@ describe('POST /register', () => {
 
 - [ ] **Step 3: Убедиться, что тесты падают**
 
-Run: `npx jest apps/person/test/register.e2e-spec.ts`
+Run: `npx vitest run --config vitest.config.e2e.ts apps/person/test/register.e2e-spec.ts`
 Expected: FAIL на всех четырёх, 404.
 
 - [ ] **Step 4: Реализовать регистрацию**
@@ -411,7 +414,7 @@ Expected: FAIL на всех четырёх, 404.
 
 - [ ] **Step 5: Прогнать тесты**
 
-Run: `npx jest apps/person/test/register.e2e-spec.ts`
+Run: `npx vitest run --config vitest.config.e2e.ts apps/person/test/register.e2e-spec.ts`
 Expected: PASS, 4 теста.
 
 - [ ] **Step 6: `GET /persons/:id`**
@@ -563,7 +566,7 @@ describe('GET /profiles/:token', () => {
 
 - [ ] **Step 3: Убедиться, что тесты падают**
 
-Run: `npx jest apps/profile/test/links.e2e-spec.ts`
+Run: `npx vitest run --config vitest.config.e2e.ts apps/profile/test/links.e2e-spec.ts`
 Expected: FAIL, 6 тестов.
 
 - [ ] **Step 4: Реализовать**
@@ -584,7 +587,7 @@ Expected: FAIL, 6 тестов.
 
 - [ ] **Step 5: Прогнать тесты**
 
-Run: `npx jest apps/profile/test/links.e2e-spec.ts`
+Run: `npx vitest run --config vitest.config.e2e.ts apps/profile/test/links.e2e-spec.ts`
 Expected: PASS, 6 тестов.
 
 - [ ] **Step 6: Валидация тела профиля (Review Focus 5)**
@@ -630,7 +633,7 @@ describe('валидация тела профиля', () => {
 });
 ```
 
-Run: `npx jest apps/profile/test/profile-dto.spec.ts`
+Run: `npx vitest run apps/profile/test/profile-dto.spec.ts`
 Expected: PASS, 8 проверок.
 
 - [ ] **Step 7: Commit**
@@ -750,7 +753,7 @@ export const requiredLabelFor = (step: keyof typeof STEP_OWNER) => ({
 import { HatchetClient } from '@hatchet-dev/typescript-sdk';
 import { STEP, buildOnboardingWorkflow } from '@contracts';
 
-jest.setTimeout(120_000);
+vi.setConfig({ testTimeout: 120_000 });
 
 describe('ворота владения', () => {
   it('каждый шаг исполняет только свой воркер', async () => {
@@ -799,7 +802,7 @@ describe('ворота владения', () => {
 
 - [ ] **Step 4: Убедиться, что тест падает**
 
-Run: `npx jest test/ownership`
+Run: `npx vitest run test/ownership`
 Expected: FAIL — workflow `person-onboarding` не зарегистрирован, ни
 одного воркера нет.
 
@@ -832,7 +835,7 @@ Expected: FAIL — workflow `person-onboarding` не зарегистриров�
 docker compose -f docker-compose.hatchet.yml up -d
 npm run start:person &
 npm run start:profile &
-npx jest test/ownership
+npx vitest run test/ownership
 ```
 
 Expected: PASS, 2 теста.
@@ -934,7 +937,7 @@ describe('GET /registrations/:runId', () => {
 
 - [ ] **Step 2: Убедиться, что тесты падают**
 
-Run: `npx jest apps/person/test/registrations.e2e-spec.ts`
+Run: `npx vitest run --config vitest.config.e2e.ts apps/person/test/registrations.e2e-spec.ts`
 Expected: FAIL, 4 теста.
 
 - [ ] **Step 3: Запуск саги из регистрации**
@@ -980,7 +983,7 @@ Expected: FAIL, 4 теста.
 
 - [ ] **Step 6: Прогнать тесты**
 
-Run: `npx jest apps/person/test/registrations.e2e-spec.ts`
+Run: `npx vitest run --config vitest.config.e2e.ts apps/person/test/registrations.e2e-spec.ts`
 Expected: PASS, 4 теста.
 
 - [ ] **Step 7: ЛОМАЕМ — погасить Profile и посмотреть на ретраи**
@@ -1069,7 +1072,7 @@ export const profileScope = (personId: string) => `person:${personId}`;
 
 ```ts
 // apps/profile/test/await-profile.spec.ts
-jest.setTimeout(120_000);
+vi.setConfig({ testTimeout: 120_000 });
 
 it('событие завершает сагу и поднимает флаг в Person', async () => {
   const { body } = await postPerson('/register', {
@@ -1143,7 +1146,7 @@ it('чужое событие не будит сагу', async () => {
 
 - [ ] **Step 3: Убедиться, что тесты падают**
 
-Run: `npx jest apps/profile/test/await-profile.spec.ts`
+Run: `npx vitest run apps/profile/test/await-profile.spec.ts`
 Expected: FAIL — заглушка `awaitProfile` возвращает `timedOut: true`,
 профиль не сохраняется, флаг не поднимается.
 
@@ -1190,7 +1193,7 @@ const event = await ctx.waitForEvent(
 
 - [ ] **Step 6: Прогнать тесты**
 
-Run: `npx jest apps/profile/test/await-profile.spec.ts`
+Run: `npx vitest run apps/profile/test/await-profile.spec.ts`
 Expected: PASS, 3 теста.
 
 - [ ] **Step 7: ЛОМАЕМ — убить воркер посреди ожидания**
@@ -1248,7 +1251,7 @@ it('падение воркера Person во время ожидания не �
 });
 ```
 
-Run: `npx jest apps/profile/test/await-profile.spec.ts -t "воркера Person"`
+Run: `npx vitest run apps/profile/test/await-profile.spec.ts -t "воркера Person"`
 Expected: PASS.
 
 - [ ] **Step 10: Commit**
@@ -1357,7 +1360,7 @@ describe('POST /profiles/:token', () => {
 
 - [ ] **Step 2: Убедиться, что тесты падают**
 
-Run: `npx jest apps/profile/test/save-profile.e2e-spec.ts`
+Run: `npx vitest run --config vitest.config.e2e.ts apps/profile/test/save-profile.e2e-spec.ts`
 Expected: FAIL, 5 тестов.
 
 - [ ] **Step 3: Реализовать эндпоинт**
@@ -1375,7 +1378,7 @@ Expected: FAIL, 5 тестов.
 
 - [ ] **Step 4: Прогнать тесты**
 
-Run: `npx jest apps/profile/test/save-profile.e2e-spec.ts`
+Run: `npx vitest run --config vitest.config.e2e.ts apps/profile/test/save-profile.e2e-spec.ts`
 Expected: PASS, 5 тестов.
 
 - [ ] **Step 5: ЛОМАЕМ — воспроизвести дуальную запись**
@@ -1439,7 +1442,7 @@ git commit -m "feat(profile): публикация profile.completed без за
 Тест выставляет `'10s'`.
 
 ```ts
-jest.setTimeout(120_000);
+vi.setConfig({ testTimeout: 120_000 });
 
 it('при истечении ожидания идёт в напоминание, а не в приветствие', async () => {
   // воркеры подняты с AWAIT_PROFILE_TIMEOUT=10s
@@ -1473,7 +1476,7 @@ it('при успешном профиле напоминание не отпр�
 
 - [ ] **Step 2: Убедиться, что тесты падают**
 
-Run: `AWAIT_PROFILE_TIMEOUT=10s npx jest apps/person/test/timeout-branch.spec.ts`
+Run: `AWAIT_PROFILE_TIMEOUT=10s npx vitest run apps/person/test/timeout-branch.spec.ts`
 Expected: FAIL — шаги возвращают заглушечные значения.
 
 - [ ] **Step 3: Вынести таймаут в конфиг**
@@ -1498,7 +1501,7 @@ Expected: FAIL — шаги возвращают заглушечные знач
 
 - [ ] **Step 5: Прогнать тесты**
 
-Run: `AWAIT_PROFILE_TIMEOUT=10s npx jest apps/person/test/timeout-branch.spec.ts`
+Run: `AWAIT_PROFILE_TIMEOUT=10s npx vitest run apps/person/test/timeout-branch.spec.ts`
 Expected: PASS, 2 теста.
 
 - [ ] **Step 6: Посмотреть обе ветки в UI**
@@ -1650,7 +1653,7 @@ it('ран находится по personId в additionalMetadata', async () => 
 
 - [ ] **Step 2: Убедиться, что падает, и добавить метаданные**
 
-Run: `npx jest apps/person/test/metadata.spec.ts`
+Run: `npx vitest run apps/person/test/metadata.spec.ts`
 Expected: FAIL, ноль строк.
 
 Затем добавить `additionalMetadata: { personId }` в вызов `runNoWait`
@@ -1722,7 +1725,7 @@ git commit -m "feat: поиск рана по personId и скрипт разб�
 - [ ] **Step 1: Написать сквозной тест**
 
 ```ts
-jest.setTimeout(180_000);
+vi.setConfig({ testTimeout: 180_000 });
 
 it('полный путь: регистрация → ссылка → профиль → флаг', async () => {
   const email = unique('e2e@example.com');
@@ -1762,7 +1765,7 @@ it('полный путь: регистрация → ссылка → проф�
 
 - [ ] **Step 2: Убедиться, что тест падает без поднятого стека**
 
-Run: `npx jest test/e2e`
+Run: `npx vitest run --config vitest.config.e2e.ts test/e2e`
 Expected: FAIL, отказ соединения.
 
 - [ ] **Step 3: Dockerfile для сервисов**
@@ -1786,7 +1789,7 @@ Expected: FAIL, отказ соединения.
   "scripts": {
     "up": "docker compose -f docker-compose.hatchet.yml -f docker-compose.apps.yml up -d --build",
     "down": "docker compose -f docker-compose.hatchet.yml -f docker-compose.apps.yml down",
-    "test:e2e": "jest test/e2e"
+    "test:e2e": "vitest run --config vitest.config.e2e.ts"
   }
 }
 ```
@@ -1808,7 +1811,7 @@ Hatchet — это не флейк, а недостающий healthcheck; по�
 
 - [ ] **Step 7: Прогнать всё**
 
-Run: `npx jest && cd apps/web && npx vitest run`
+Run: `npm test && npm run test:e2e && cd apps/web && npx vitest run`
 Expected: зелёные все наборы.
 
 - [ ] **Step 8: Commit**
