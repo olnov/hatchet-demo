@@ -1,0 +1,54 @@
+networks:
+  hatchet_network:
+    driver: bridge
+
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: hatchet
+      POSTGRES_PASSWORD: password!1
+      POSTGRES_DB: hatchet
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d hatchet -U hatchet"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
+    restart: always
+    volumes:
+      - hatchet_lite_postgres_data:/var/lib/postgresql/data
+      - ./infra/postgres-init:/docker-entrypoint-initdb.d:ro
+    networks:
+      - hatchet_network
+
+  hatchet-lite:
+    image: ghcr.io/hatchet-dev/hatchet/hatchet-lite:latest
+    ports:
+      - "8888:8888"
+      - "7077:7077"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: always
+    networks:
+      - hatchet_network
+    environment:
+      DATABASE_URL: "postgresql://hatchet:password!1@postgres:5432/hatchet?sslmode=disable"
+      SERVER_AUTH_COOKIE_DOMAIN: localhost
+      SERVER_AUTH_COOKIE_INSECURE: "t"
+      SERVER_GRPC_BIND_ADDRESS: "0.0.0.0"
+      SERVER_GRPC_INSECURE: "t"
+      SERVER_GRPC_BROADCAST_ADDRESS: localhost:7077
+      SERVER_GRPC_PORT: "7077"
+      SERVER_URL: http://localhost:8888
+      SERVER_AUTH_SET_EMAIL_VERIFIED: "t"
+      SERVER_INTERNAL_CLIENT_INTERNAL_GRPC_BROADCAST_ADDRESS: localhost:7077
+    volumes:
+      - "hatchet_lite_config:/config"
+
+volumes:
+  hatchet_lite_postgres_data:
+  hatchet_lite_config:
