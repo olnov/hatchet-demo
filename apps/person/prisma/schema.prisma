@@ -1,0 +1,17 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client"
+  output = "../generated/prisma"
+}
+
+model Person {
+  id                 String   @id @default(uuid())
+  email              String   @unique
+  passwordHash       String
+  isProfileCompleted Boolean  @default(false)
+  onboardingRunId    String?
+  createdAt          DateTime @default(now())
+}

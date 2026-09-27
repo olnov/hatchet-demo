@@ -148,6 +148,49 @@ test/
 
 ---
 
+## Общие тест-хелперы
+
+Тесты во всех этапах опираются на общий набор хелперов. Они лежат в
+`test/helpers/` и созданы в Task 0 — **это не методы какой-либо
+библиотеки**, а наш код. Импорт: `import { unique, pollUntil } from
+'../../test/helpers/index.js'`.
+
+Готовы с Task 0:
+
+| Хелпер | Сигнатура | Зачем |
+| --- | --- | --- |
+| `unique` | `(email: string) => string` | `'a@example.com'` → `'a+3f2c1e9d@example.com'`. Тесты идут против реальной базы и не чистят её; без этого второй прогон падал бы на уникальности email |
+| `sleep` | `(ms: number) => Promise<void>` | пауза |
+| `pollUntil` | `(probe, done, timeoutMs, intervalMs?) => Promise<T>` | опрос до выполнения условия; по таймауту бросает ошибку с последним состоянием. Почти всё здесь асинхронно: сага не готова к моменту HTTP-ответа |
+| `createTestApp` | `(AppModule) => Promise<TestApp>` | поднимает приложение **в этом же процессе**; отдаёт `.post(path, body?, headers?)`, `.get(path, headers?)`, `.close()`. Это и есть `post`/`get` из тестов Task 1 и Task 2 |
+| `httpClient` | `(baseUrl) => { post, get }` | клиент к **уже запущенному** сервису по сети |
+| `personApi`, `profileApi` | `() => httpClient(...)` | то же для `:3001` и `:3002`. Это `postPerson`/`getPerson` из тестов Task 5 и Task 7 |
+
+`createTestApp` против `httpClient` — разница принципиальная.
+Внутрипроцессный вариант быстрый и не требует контейнеров, годится для
+тестов одного сервиса. Но сага проверяет, что шаги исполняют **разные
+процессы**, поэтому начиная с Task 3 межсервисные тесты идут только
+через `httpClient`.
+
+Появляются позже, каждый в своём этапе:
+
+| Хелпер | Этап | Что делает |
+| --- | --- | --- |
+| `waitForDone(hatchet, runId, timeoutMs)` | Task 3 | опрашивает `runs.getDetails` до `done === true`, возвращает `RunDetail` |
+| `readWorkerIds()` | Task 3 | `hatchet.workers.list()` → `{ personWorkerId, profileWorkerId }` по именам |
+| `workerOf(details, step)` | Task 3 | id воркера, исполнившего шаг |
+| `lastRunDetails()` | Task 3 | детали последнего рана саги |
+| `registerAndAwaitLink()` | Task 5 | регистрирует и ждёт `linkReady`; возвращает `{ personId, runId, token }` |
+| `pushProfileCompleted(personId, data?)` | Task 5 | `events.push` с нужным scope |
+| `stopPersonWorker()`, `startPersonWorker()` | Task 5 | для упражнения с убийством воркера |
+| `countEvents(key, scope)` | Task 6 | сколько событий с таким ключом и scope видел Hatchet |
+| `issueLinkFor()` | Task 6 | выпускает ссылку напрямую через `/internal/links`, возвращает `{ token, personId }` |
+| `prisma`, `profilePrisma` | Task 1, Task 2 | Prisma-клиенты соответствующей базы, поднятые в тестах |
+
+Этап, в котором хелпер появляется впервые, обязан его создать. Если
+пишешь этап и хелпера ещё нет — это не повод его выдумывать на месте:
+проверь таблицу, он принадлежит какому-то этапу.
+
 ## Task 0: Скелет монорепо и два живых сервиса
 
 **Учебный акцент:** ничего про Hatchet. Цель — чтобы дальше ни одна
@@ -160,14 +203,18 @@ test/
 - Create: `apps/person/src/main.ts`, `apps/person/src/app.module.ts`
 - Create: `apps/profile/src/main.ts`, `apps/profile/src/app.module.ts`
 - Modify: `.gitignore` (добавить `apps/web/node_modules/`)
+- Create: `test/helpers/{unique,poll,app,http,index}.ts` — см. раздел
+  «Общие тест-хелперы» выше
 - Test: `apps/person/test/health.e2e-spec.ts`,
-  `apps/profile/test/health.e2e-spec.ts`
+  `apps/profile/test/health.e2e-spec.ts`, `test/helpers/helpers.spec.ts`
 
 **Interfaces:**
 - Consumes: ничего.
 - Produces: рабочие команды `npm run start:person`,
   `npm run start:profile`; эндпоинт `GET /health` → `200 { ok: true,
-  service: 'person' | 'profile' }` на обоих сервисах.
+  service: 'person' | 'profile' }` на обоих сервисах; общие тест-хелперы
+  `unique`, `sleep`, `pollUntil`, `createTestApp`, `httpClient`,
+  `personApi`, `profileApi`.
 
 - [ ] **Step 1: Создать монорепо Nest с двумя приложениями**
 
@@ -388,9 +435,9 @@ describe('POST /register', () => {
 });
 ```
 
-`unique(...)` — хелпер, подмешивающий в локальную часть адреса
-`crypto.randomUUID()`, чтобы прогоны не конфликтовали. `post` — обёртка
-над supertest поверх поднятого `AppModule`.
+`post`, `get` и `unique` — из `test/helpers/`, см. раздел «Общие
+тест-хелперы». `prisma` — клиент базы `person`, поднимаемый в этом
+тестовом файле.
 
 - [ ] **Step 3: Убедиться, что тесты падают**
 
