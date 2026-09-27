@@ -61,6 +61,12 @@ PostgreSQL 17, Hatchet Lite в Docker.
   `schema`, `migrations.path` и `datasource.url`. Общего конфига в корне
   нет: он увёл бы миграции обоих сервисов в одну папку и одну базу.
   Команды Prisma всегда с `--config apps/<svc>/prisma.config.ts`.
+- `module: "preserve"`, `moduleResolution: "bundler"` — относительные
+  импорты **без** расширения `.js`. Законно потому, что нативный
+  резолвер Node в проекте не используется: сборка через rspack даёт
+  единый бандл, тесты идут через vitest. Если когда-нибудь перейдём на
+  покомпонентную сборку `tsc` и запуск `node` по файлам — расширения
+  придётся вернуть.
 - Тест-раннер — **vitest** (NestJS 12 генерирует его вместо jest).
   `*.spec.ts` идут в `npm test`, `*.e2e-spec.ts` — в `npm run test:e2e`
   (`vitest.config.e2e.ts`). `@nestjs/cli` — 12.0.7, версии 12.1.0 у CLI нет.
@@ -511,8 +517,9 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
   Проверено на Prisma 7.10.0: `extends PrismaClient` типизируется
   (в новом генераторе `PrismaClient` — const плюс одноимённый тип),
   `this.person.count(...)` типизируется, соединение к базе работает.
-  Путь импорта — `../../generated/prisma/client.js` с расширением:
-  проект на ESM с `moduleResolution: nodenext`, без `.js` падает `tsc`.
+  Путь импорта — `../../generated/prisma/client`. Расширение `.js`
+  указывать не нужно: `moduleResolution` в проекте — `bundler`
+  (см. Global Constraints); с `.js` тоже работает.
   `onModuleDestroy` нужен, чтобы тесты не оставляли висящих коннектов.
 - Зарегистрировать `PrismaService` в `providers` у `AppModule`, иначе
   `app.provider(PrismaService)` в тестах бросит «Nest could not find».
