@@ -53,6 +53,10 @@ PostgreSQL 17, Hatchet Lite в Docker.
   в ответах API.
 - У каждого шага саги есть `desiredWorkerLabels` с `required: true`.
   Шаг без метки — ошибка ревью.
+- У каждого сервиса свой `apps/<svc>/prisma.config.ts` со своими
+  `schema`, `migrations.path` и `datasource.url`. Общего конфига в корне
+  нет: он увёл бы миграции обоих сервисов в одну папку и одну базу.
+  Команды Prisma всегда с `--config apps/<svc>/prisma.config.ts`.
 - Тест-раннер — **vitest** (NestJS 12 генерирует его вместо jest).
   `*.spec.ts` идут в `npm test`, `*.e2e-spec.ts` — в `npm run test:e2e`
   (`vitest.config.e2e.ts`). `@nestjs/cli` — 12.0.7, версии 12.1.0 у CLI нет.
@@ -345,6 +349,7 @@ git commit -m "feat: скелет Nest-монорепо, два сервиса, 
 
 **Files:**
 - Create: `apps/person/prisma/schema.prisma`
+- Create: `apps/person/prisma.config.ts`
 - Create: `apps/person/src/prisma/prisma.service.ts`
 - Create: `apps/person/src/person/person.service.ts`,
   `person.controller.ts`, `dto.ts`
@@ -385,11 +390,34 @@ model Person {
 }
 ```
 
-Run: `npx prisma migrate dev --schema apps/person/prisma/schema.prisma --name init_person`
+Prisma 7 читает настройки из `prisma.config.ts`, а не из блока
+`datasource` в схеме. Сервиса два, поэтому **конфиг нужен свой на
+каждый** — иначе миграции обоих уедут в одну папку и против одной базы.
 
-Примечание по Prisma 7: генератор называется `prisma-client` (не
-`prisma-client-js`), и `output` обязателен. Каталог `generated/` уже в
-`.gitignore`.
+```ts
+// apps/person/prisma.config.ts
+import 'dotenv/config';
+import { defineConfig, env } from 'prisma/config';
+
+export default defineConfig({
+  schema: 'apps/person/prisma/schema.prisma',
+  migrations: { path: 'apps/person/prisma/migrations' },
+  datasource: { url: env('PERSON_DATABASE_URL') },
+});
+```
+
+Run: `npx prisma migrate dev --config apps/person/prisma.config.ts --name init_person`
+Expected: `Your database is now in sync with your schema`, папка
+`apps/person/prisma/migrations/<timestamp>_init_person/` создана.
+
+Проверить, что база именно та:
+Run: `docker exec hatchettest-postgres-1 psql -U hatchet -d person -tAc "\dt"`
+Expected: строки `Person` и `_prisma_migrations`.
+
+Примечания по Prisma 7: генератор называется `prisma-client` (не
+`prisma-client-js`), и `output` обязателен; `datasource` в схеме
+остаётся только с `provider`, url живёт в конфиге. Каталог `generated/`
+уже в `.gitignore`.
 
 - [ ] **Step 2: Написать падающие тесты регистрации**
 
@@ -489,6 +517,7 @@ git commit -m "feat(person): регистрация с argon2id и Prisma"
 
 **Files:**
 - Create: `apps/profile/prisma/schema.prisma`
+- Create: `apps/profile/prisma.config.ts`
 - Create: `apps/profile/src/prisma/prisma.service.ts`
 - Create: `apps/profile/src/links/links.service.ts`,
   `links.controller.ts`, `internal-secret.guard.ts`
@@ -538,7 +567,25 @@ model Profile {
 }
 ```
 
-Run: `npx prisma migrate dev --schema apps/profile/prisma/schema.prisma --name init_profile`
+Конфиг — по образцу Person, со своими путями и своей переменной:
+
+```ts
+// apps/profile/prisma.config.ts
+import 'dotenv/config';
+import { defineConfig, env } from 'prisma/config';
+
+export default defineConfig({
+  schema: 'apps/profile/prisma/schema.prisma',
+  migrations: { path: 'apps/profile/prisma/migrations' },
+  datasource: { url: env('PROFILE_DATABASE_URL') },
+});
+```
+
+Run: `npx prisma migrate dev --config apps/profile/prisma.config.ts --name init_profile`
+Expected: миграция в `apps/profile/prisma/migrations/`, и — обязательно
+проверить — база `person` при этом **не** затронута:
+`docker exec hatchettest-postgres-1 psql -U hatchet -d profile -tAc "\dt"`
+показывает `Profile`, `ProfileLink`, `_prisma_migrations`.
 
 - [ ] **Step 2: Написать падающие тесты**
 
