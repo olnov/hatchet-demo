@@ -53,6 +53,10 @@ PostgreSQL 17, Hatchet Lite в Docker.
   в ответах API.
 - У каждого шага саги есть `desiredWorkerLabels` с `required: true`.
   Шаг без метки — ошибка ревью.
+- Prisma 7 **требует драйверный адаптер**: `new PrismaClient({ adapter })`,
+  где `adapter = new PrismaPg({ connectionString })`. Опции
+  `datasourceUrl` больше нет, а url из схемы в клиент не попадает —
+  `new PrismaClient()` без адаптера падает на этапе конструктора.
 - У каждого сервиса свой `apps/<svc>/prisma.config.ts` со своими
   `schema`, `migrations.path` и `datasource.url`. Общего конфига в корне
   нет: он увёл бы миграции обоих сервисов в одну папку и одну базу.
@@ -476,8 +480,42 @@ Expected: FAIL на всех четырёх, 404.
 
 Требования, которым должен удовлетворять код:
 
-- `PrismaService extends PrismaClient implements OnModuleInit`, в
-  `onModuleInit` — `await this.$connect()`.
+- `PrismaService extends PrismaClient implements OnModuleInit,
+  OnModuleDestroy`. Конструктор обязан передать адаптер — в Prisma 7
+  иначе клиент не создаётся:
+
+```ts
+import { Injectable, type OnModuleInit, type OnModuleDestroy } from '@nestjs/common';
+import { PrismaPg } from '@prisma/adapter-pg';
+
+import { PrismaClient } from '../../generated/prisma/client.js';
+
+@Injectable()
+export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
+  constructor() {
+    const connectionString = process.env.PERSON_DATABASE_URL;
+    if (!connectionString) throw new Error('PERSON_DATABASE_URL не задан');
+    super({ adapter: new PrismaPg({ connectionString }) });
+  }
+
+  async onModuleInit() {
+    await this.$connect();
+  }
+
+  async onModuleDestroy() {
+    await this.$disconnect();
+  }
+}
+```
+
+  Проверено на Prisma 7.10.0: `extends PrismaClient` типизируется
+  (в новом генераторе `PrismaClient` — const плюс одноимённый тип),
+  `this.person.count(...)` типизируется, соединение к базе работает.
+  Путь импорта — `../../generated/prisma/client.js` с расширением:
+  проект на ESM с `moduleResolution: nodenext`, без `.js` падает `tsc`.
+  `onModuleDestroy` нужен, чтобы тесты не оставляли висящих коннектов.
+- Зарегистрировать `PrismaService` в `providers` у `AppModule`, иначе
+  `app.provider(PrismaService)` в тестах бросит «Nest could not find».
 - Валидация тела zod-схемой: `email` — валидный адрес, `password` —
   минимум 8 символов. Ошибка валидации → `400`.
 - Хеш: `argon2.hash(password, { type: argon2.argon2id })`. Параметры

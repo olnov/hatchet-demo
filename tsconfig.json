@@ -22,15 +22,15 @@
       "vitest/globals",
       "node"
     ],
-    "baseUrl": "./",
     "paths": {
       "@contracts": [
-        "libs/contracts/src/index.ts"
+        "./libs/contracts/src/index.ts"
       ],
       "@contracts/*": [
-        "libs/contracts/src/*"
+        "./libs/contracts/src/*"
       ]
-    }
+    },
+    "ignoreDeprecations": "6.0"
   },
   "files": [],
   "references": [
