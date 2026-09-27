@@ -1,12 +1,21 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { createTestApp, unique, type TestApp } from '../../../test/helpers';
+import {
+  createTestApp,
+  unique,
+  type TestApp,
+} from '../../../test/helpers/index';
 import { AppModule } from '../../person/src/app.module';
+import { PrismaService } from '../src/prisma/prisma.service';
 
 let app: TestApp;
+let prisma: PrismaService;
 beforeAll(async () => {
   app = await createTestApp(AppModule);
+  prisma = app.provider(PrismaService);
 });
-afterAll(() => app.close());
+afterAll(async () => {
+  await app.close();
+});
 
 describe('POST /register', () => {
   it('создаёт пользователя и возвращает personId', async () => {
@@ -43,7 +52,7 @@ describe('POST /register', () => {
     });
 
     expect(second.status).toBe(409);
-    const count = await app.prisma.person.count({ where: { email } });
+    const count = await prisma.person.count({ where: { email } });
     expect(count).toBe(1);
   });
 
