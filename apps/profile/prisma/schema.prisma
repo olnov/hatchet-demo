@@ -1,0 +1,24 @@
+datasource db {
+    provider = "postgresql"
+}
+
+generator client {
+    provider = "prisma-client"
+    output = "../generated/prisma"
+}
+
+model Info {
+    id String   @id @default(uuid())
+    personId String @unique
+    firstName String
+    lastName String
+    personalStatement String
+    createdAt DateTime @default(now()) 
+}
+
+model ProfileLink {
+  token     String    @id
+  personId  String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+}
