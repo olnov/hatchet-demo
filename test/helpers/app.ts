@@ -8,6 +8,7 @@ export type Headers = Record<string, string>;
 export interface TestApp {
   post(path: string, body?: Json, headers?: Headers): Promise<request.Response>;
   get(path: string, headers?: Headers): Promise<request.Response>;
+  patch(path: string, body?: Json, headers?: Headers): Promise<request.Response>;
   /**
    * Провайдер из контейнера приложения, по классу-токену.
    *
@@ -41,6 +42,8 @@ export async function createTestApp(appModule: Type): Promise<TestApp> {
     post: (path, body = {}, headers = {}) =>
       request(server).post(path).set(headers).send(body),
     get: (path, headers = {}) => request(server).get(path).set(headers),
+    patch: (path, body = {}, headers = {}) =>
+      request(server).patch(path).set(headers).send(body),
     provider: (token) => moduleRef.get(token),
     close: () => instance.close(),
   };

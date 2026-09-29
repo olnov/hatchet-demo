@@ -19,13 +19,17 @@ afterAll(async () => {
 
 describe('POST /register', () => {
   it('создаёт пользователя и возвращает personId', async () => {
+    const email = unique('a@example.com');
     const res = await app.post('/register', {
-      email: unique('a@example.com'),
+      email,
       password: 'correct horse battery staple',
     });
 
     expect(res.status).toBe(201);
-    expect(res.body.personId).toMatch(/^[0-9a-f-]{36}$/);
+    expect(res.body).toMatchObject({
+      personId: expect.stringMatching(/^[0-9a-f-]{36}$/),
+      email,
+    });
   });
 
   it('не возвращает пароль и не возвращает хеш', async () => {
