@@ -27,7 +27,15 @@ export class UserController {
   @ApiOperation({ summary: 'Get a user by email' })
       @ApiCreatedResponse({ standardSchema: UserSchema })
   async getUserByEmail(@Param('email') email: string): Promise<UserDto | null> {
+    console.log('Fetching user by email:', email);
     return this.userService.getUserByEmail(email);
+  }
+
+  @Get()
+  @ApiOperation({ summary: 'Get all users' })
+  @ApiCreatedResponse({ standardSchema: UserSchema })
+  async getAllUsers(): Promise<UserDto[]> {
+    return this.userService.getAllUsers();
   }
 
   @Put(':id')

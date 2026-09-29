@@ -28,15 +28,20 @@ export class UserService {
     }
 
     async getUserById(id: string): Promise<userData | null> {
-        return this.prisma.person.findUnique({ where: { id } });
+        return this.prisma.person.findUniqueOrThrow({ where: { id } });
     }
 
     async getUserByEmail(email: string): Promise<userData | null> {
-        return this.prisma.person.findUnique({ where: { email } });
+        console.log('[Service] Fetching user by email:', email);
+        return this.prisma.person.findUniqueOrThrow({ where: { email } });
     }
 
     async updateUser(id: string, data: Partial<newUserData>): Promise<userData> {
         return this.prisma.person.update({ where: { id }, data });
+    }
+
+    async getAllUsers(): Promise<userData[]> {
+        return this.prisma.person.findMany();
     }
 }
 

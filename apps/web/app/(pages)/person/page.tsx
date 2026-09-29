@@ -1,7 +1,28 @@
+'use client';
+
+import { registerPerson } from '@/app/api/person';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+
 export default function Person() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const router = useRouter();
+
+  const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    try {
+      const registration = await registerPerson({ email, password });
+      router.push(`/invite?personId=${registration.personId}`);
+    } catch (error) {
+      console.error('Error creating person:', error);
+      alert('Не удалось зарегистрироваться');
+    }
+  };
+
   return (
     <main className="flex min-h-full items-center justify-center p-6">
-      <form className="flex w-full max-w-sm flex-col gap-5 rounded-2xl bg-white p-6 text-neutral-900 shadow-sm">
+      <form onSubmit={handleSubmit} className="flex w-full max-w-sm flex-col gap-5 rounded-2xl bg-white p-6 text-neutral-900 shadow-sm">
         <div>
           <h1 className="text-2xl font-semibold">Registration</h1>
         </div>
@@ -17,6 +38,8 @@ export default function Person() {
             type="email"
             autoComplete="email"
             required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
           />
         </div>
 
@@ -32,6 +55,8 @@ export default function Person() {
             autoComplete="new-password"
             minLength={8}
             required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
           />
         </div>
 
