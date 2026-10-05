@@ -16,13 +16,16 @@ export default function Person() {
       router.push(`/invite?personId=${registration.personId}`);
     } catch (error) {
       console.error('Error creating person:', error);
-      alert('Не удалось зарегистрироваться');
+      alert(`Не удалось зарегистрироваться: ${error.message}`);
     }
   };
 
   return (
     <main className="flex min-h-full items-center justify-center p-6">
-      <form onSubmit={handleSubmit} className="flex w-full max-w-sm flex-col gap-5 rounded-2xl bg-white p-6 text-neutral-900 shadow-sm">
+      <form
+        onSubmit={handleSubmit}
+        className="flex w-full max-w-sm flex-col gap-5 rounded-2xl bg-white p-6 text-neutral-900 shadow-sm"
+      >
         <div>
           <h1 className="text-2xl font-semibold">Registration</h1>
         </div>

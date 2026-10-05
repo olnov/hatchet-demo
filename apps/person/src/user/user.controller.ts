@@ -1,6 +1,6 @@
 import { Controller } from '@nestjs/common';
 import { UserService } from './user.service';
-import { Body, Get, Param, Post, Put } from '@nestjs/common';
+import { Body, Get, Param, Post, Put, Delete } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiCreatedResponse } from '@nestjs/swagger';
 import { type UserDto, type NewUserDto, UserSchema, NewUserSchema } from './dto/user.dto';
 
@@ -12,7 +12,9 @@ export class UserController {
   @Post()
   @ApiOperation({ summary: 'Create a new user' })
   @ApiCreatedResponse({ standardSchema: UserSchema })
-  async createUser(@Body({ schema: NewUserSchema }) data: NewUserDto): Promise<UserDto> {
+  async createUser(
+    @Body({ schema: NewUserSchema }) data: NewUserDto,
+  ): Promise<UserDto> {
     return this.userService.createUser(data);
   }
 
@@ -25,10 +27,13 @@ export class UserController {
 
   @Get('email/:email')
   @ApiOperation({ summary: 'Get a user by email' })
-      @ApiCreatedResponse({ standardSchema: UserSchema })
-  async getUserByEmail(@Param('email') email: string): Promise<UserDto | null> {
-    console.log('Fetching user by email:', email);
-    return this.userService.getUserByEmail(email);
+  @ApiCreatedResponse({ standardSchema: UserSchema })
+  async getUserByEmail(@Param('email') email: string): Promise<UserDto | null | Error> {
+    try {
+      return this.userService.getUserByEmail(email);
+    } catch (error) {
+      return error as Error;
+    }
   }
 
   @Get()
@@ -41,7 +46,16 @@ export class UserController {
   @Put(':id')
   @ApiOperation({ summary: 'Update a user by ID' })
   @ApiCreatedResponse({ standardSchema: UserSchema })
-  async updateUser(@Param('id') id: string, @Body() data: Partial<NewUserDto>): Promise<UserDto> {
+  async updateUser(
+    @Param('id') id: string,
+    @Body() data: Partial<NewUserDto>,
+  ): Promise<UserDto> {
     return this.userService.updateUser(id, data);
+  }
+
+  @Delete(':email')
+  @ApiOperation({ summary: 'Delete existing user by email' })
+  async deleteUser(@Param('email') email: string): Promise<UserDto | null> {
+    return this.userService.deleteByEmail(email);
   }
 }
