@@ -1,0 +1,49 @@
+{
+  "compilerOptions": {
+    "module": "preserve",
+    "moduleResolution": "bundler",
+    "esModuleInterop": true,
+    "isolatedModules": true,
+    "declaration": true,
+    "removeComments": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
+    "target": "ES2023",
+    "sourceMap": true,
+    "outDir": "./dist",
+    "rootDir": ".",
+    "incremental": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "strictPropertyInitialization": false,
+    "types": [
+      "vitest/globals",
+      "node"
+    ],
+    "paths": {
+      "@contracts": [
+        "./libs/contracts/src/index.ts"
+      ],
+      "@contracts/*": [
+        "./libs/contracts/src/*"
+      ]
+    },
+    "ignoreDeprecations": "6.0"
+  },
+  "files": [],
+  "references": [
+    {
+      "path": "./apps/person/tsconfig.app.json"
+    },
+    {
+      "path": "./apps/profile/tsconfig.app.json"
+    },
+    {
+      "path": "./libs/contracts/tsconfig.lib.json"
+    },
+    {
+      "path": "./tsconfig.spec.json"
+    }
+  ]
+}

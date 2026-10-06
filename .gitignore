@@ -1,0 +1,28 @@
+# зависимости — node_modules только в корне монорепо
+node_modules/
+
+# сборка
+dist/
+*.tsbuildinfo
+
+# сгенерированный Prisma-клиент (создаётся `prisma generate`)
+generated/
+
+# секреты — здесь API-токен Hatchet и строки подключения к БД
+.env
+.env.local
+.env.*.local
+
+# редактор и ОС
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# логи
+*.log
+npm-debug.log*
+
+# фронт живёт своим Vite, у него свой node_modules
+apps/web/node_modules/
+apps/web/dist/
