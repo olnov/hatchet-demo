@@ -1,13 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { ProfileLinksService } from '../profile-links/profile-links.service.js';
-import { PersonClient } from '../person-client/person-client.service.js';
+import { PROFILE_COMPLETED_EVENT, profileScope } from '@contracts';
+
+import { hatchet } from '../hatchet/client.js';
 
 
 type newInfoRecord = {
     firstName: string;
     lastName: string;
-    personId: string;
     personalStatement: string;
 }
 
@@ -25,7 +26,6 @@ export class InfoService {
     constructor(
         private readonly prisma: PrismaService,
         private readonly links: ProfileLinksService,
-        private readonly personClient: PersonClient,
     ) { }
 
     async getProfile(token: string) {
@@ -35,14 +35,27 @@ export class InfoService {
 
     async submit(token: string, data: newInfoRecord) {
         const link = await this.links.requireActive(token);
-        const info = await this.prisma.info.create({ data: { ...data, personId: link.personId } });
-        await this.links.markUsed(token);
-        await this.personClient.markProfileCompleted(link.personId);
-        return { profileId: info.id, personId: link.personId };
+        await hatchet.events.push(
+            PROFILE_COMPLETED_EVENT,
+            { personId: link.personId, ...data },
+            { scope: profileScope(link.personId) },
+        );
+        return { personId: link.personId };
     }
 
-    async createInfo(data: newInfoRecord): Promise<infoRecord> {
-        return await this.prisma.info.create({ data })
+    async saveCompletedProfile(personId: string, data: Omit<newInfoRecord, 'personId'>) {
+        return this.prisma.$transaction(async (tx) => {
+            const info = await tx.info.upsert({
+                where: { personId },
+                create: { ...data, personId },
+                update: data,
+            });
+            await tx.profileLink.update({
+                where: { personId },
+                data: { usedAt: new Date() },
+            });
+            return info;
+        });
     }
 
     async getInfoById(id: string): Promise<infoRecord> {

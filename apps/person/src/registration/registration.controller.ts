@@ -1,5 +1,14 @@
-import { BadRequestException, Body, Controller, Post } from '@nestjs/common';
-import { ApiCreatedResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Post,
+} from '@nestjs/common';
+import { ApiAcceptedResponse, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import { RegisterSchema } from './dto/register.dto.js';
 import { RegistrationService } from './registration.service.js';
@@ -10,8 +19,9 @@ export class RegistrationController {
   constructor(private readonly registration: RegistrationService) {}
 
   @Post('register')
+  @HttpCode(HttpStatus.ACCEPTED)
   @ApiOperation({ summary: 'Register a person' })
-  @ApiCreatedResponse()
+  @ApiAcceptedResponse()
   register(@Body() body: unknown) {
     const parsed = RegisterSchema.safeParse(body);
     if (!parsed.success) {
@@ -19,5 +29,12 @@ export class RegistrationController {
     }
 
     return this.registration.register(parsed.data);
+  }
+
+  @Get('registrations/:runId')
+  @ApiOperation({ summary: 'Get registation task status from Hatchet' })
+  @ApiOkResponse()
+  getIssueLinkTaskStatus(@Param('runId') runId: string) {
+    return this.registration.getRegistrationTaskStatus(runId);
   }
 }

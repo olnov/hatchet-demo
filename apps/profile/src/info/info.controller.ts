@@ -1,5 +1,5 @@
-import { Controller, Body, Post, Get, Param } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiCreatedResponse } from '@nestjs/swagger';
+import { Controller, Body, Post, Get, Param, HttpCode, HttpStatus } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiCreatedResponse, ApiAcceptedResponse } from '@nestjs/swagger';
 import { InfoService } from './info.service';
 import type { NewInfoDto, InfoDto } from './dto/info.dto';
 import { NewInfoSchema, InfoSchema } from './dto/info.dto';
@@ -9,12 +9,6 @@ import { NewInfoSchema, InfoSchema } from './dto/info.dto';
 @ApiCreatedResponse({ standardSchema: InfoSchema })
 export class InfoController {
   constructor(private readonly infoService: InfoService) {}
-
-  @Post('info')
-  @ApiOperation({ summary: 'Create a new user info' })
-  async createInfo(@Body({ schema: NewInfoSchema }) data: NewInfoDto) {
-    return await this.infoService.createInfo(data);
-  }
 
   @Get('info/:id')
   @ApiOperation({ summary: 'get user info by info id' })
@@ -35,7 +29,9 @@ export class InfoController {
   }
 
   @Post('profiles/:token')
+  @HttpCode(HttpStatus.ACCEPTED)
   @ApiOperation({ summary: 'Submit a profile through an active link' })
+  @ApiAcceptedResponse()
   async submitProfile(
     @Param('token') token: string,
     @Body({ schema: NewInfoSchema }) data: NewInfoDto,

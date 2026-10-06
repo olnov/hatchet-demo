@@ -8,6 +8,7 @@ import { UserModule } from './user/user.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { RegistrationModule } from './registration/registration.module.js';
 import { PersonsModule } from './persons/persons.module.js';
+import { HatchetModule } from './hatchet/hatchet.module.js';
 
 @Module({
   controllers: [HealthController],
@@ -19,6 +20,7 @@ import { PersonsModule } from './persons/persons.module.js';
     AuthModule,
     RegistrationModule,
     PersonsModule,
+    HatchetModule,
   ],
 })
 export class AppModule {}

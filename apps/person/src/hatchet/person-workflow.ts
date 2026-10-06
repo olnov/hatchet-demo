@@ -42,28 +42,6 @@ const personSteps: StepImpls = {
 
     return markProfileCompleted(persons, input.personId);
   },
-
-  /**
-   * В учебном проекте это намеренно только лог.
-   * Напоминание посылается лишь при таймауте ожидания профиля; при успешном
-   * заполнении оно ничего не делает.
-   */
-  [STEP.sendReminder]: async (_input, ctx) => {
-    const profileResult = await ctx.parentOutput<AwaitProfileOutput>(STEP.awaitProfile);
-
-    if (profileResult.timedOut) {
-      console.log('Profile was not completed in time');
-    }
-    return { reminded: profileResult.timedOut };
-  },
-
-  /**
-   * Финальный шаг успешной ветки. Пока это заглушка вместо реальной почты.
-   */
-  [STEP.sendWelcome]: async (input) => {
-    console.log(`Welcome, ${input.email}`);
-    return { welcomed: true };
-  },
 };
 
 // Экспортируется та же DAG, что и у Profile. Запускает её person-worker.ts.

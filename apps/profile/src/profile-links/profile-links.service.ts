@@ -14,26 +14,33 @@ export class ProfileLinksService {
   ) {}
 
   async issue(personId: string) {
-    const current = await this.prisma.profileLink.findUnique({
+    const now = new Date();
+    const token = randomBytes(32).toString('base64url');
+    const expiresAt = new Date(now.getTime() + LINK_TTL_MS);
+
+    // Атомарно: создать запись или вернуть уже существующую.
+    const link = await this.prisma.profileLink.upsert({
       where: { personId },
+      create: { personId, token, expiresAt },
+      update: {},
     });
 
-    if (current && current.usedAt === null && current.expiresAt > new Date()) {
-      return this.toResponse(current);
+    // Повторный запрос для действующей ссылки возвращает её же.
+    if (link.usedAt === null && link.expiresAt > now) {
+      return this.toResponse(link);
     }
 
-    const token = randomBytes(32).toString('base64url');
-    const expiresAt = new Date(Date.now() + LINK_TTL_MS);
-    const link = current
-      ? await this.prisma.profileLink.update({
-          where: { personId },
-          data: { token, expiresAt, usedAt: null },
-        })
-      : await this.prisma.profileLink.create({
-          data: { token, personId, expiresAt },
-        });
+    // Просроченную или использованную ссылку переиздаём.
+    const renewed = await this.prisma.profileLink.update({
+      where: { personId },
+      data: {
+        token: randomBytes(32).toString('base64url'),
+        expiresAt: new Date(Date.now() + LINK_TTL_MS),
+        usedAt: null,
+      },
+    });
 
-    return this.toResponse(link);
+    return this.toResponse(renewed);
   }
 
   async requireActive(token: string) {
@@ -58,7 +65,8 @@ export class ProfileLinksService {
   }
 
   private toResponse(link: { token: string; expiresAt: Date }) {
-    const origin = this.config.get<string>('WEB_ORIGIN') ?? 'http://localhost:3000';
+    const origin =
+      this.config.get<string>('WEB_ORIGIN') ?? 'http://localhost:3000';
 
     return {
       token: link.token,

@@ -23,13 +23,3 @@ export const AwaitProfileOutputSchema = z.union([
 export const MarkCompletedOutputSchema = z.object({
   isProfileCompleted: z.boolean(),
 });
-
-// Пока уведомления — учебные заглушки, но их output остаётся явным
-// контрактом для будущей почтовой интеграции.
-export const SendReminderOutputSchema = z.object({
-  reminded: z.boolean(),
-});
-
-export const SendWelcomeOutputSchema = z.object({
-  welcomed: z.boolean(),
-});

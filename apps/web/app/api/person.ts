@@ -1,6 +1,18 @@
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_PERSON_API_URL ?? 'http://localhost:3001/api/v1';
 
+export type Registration = {
+  personId: string;
+  email: string;
+  runId: string;
+};
+
+export type RegistrationStatus =
+  | { status: 'pending' }
+  | { status: 'failed' }
+  | { status: 'completed' }
+  | { status: 'linkReady'; profileUrl: string };
+
 export async function registerPerson(data: {
   email: string;
   password: string;
@@ -16,11 +28,24 @@ export async function registerPerson(data: {
   try {
     const response = await fetch(`${API_BASE_URL}/register`, requestOptions);
     if (!response.ok) throw new Error(`Registration failed. Error status: ${response.status}`);
-    return response.json();
+    return response.json() as Promise<Registration>;
   } catch (error) {
     console.error('Error creating person:', error);
     throw error;
   }
+}
+
+export async function getRegistrationStatus(
+  runId: string,
+): Promise<RegistrationStatus> {
+  const response = await fetch(`${API_BASE_URL}/registrations/${runId}`, {
+    cache: 'no-store',
+  });
+  if (!response.ok) {
+    throw new Error(`Could not get registration status: ${response.status}`);
+  }
+
+  return response.json() as Promise<RegistrationStatus>;
 }
 
 export async function getPerson(id: string) {

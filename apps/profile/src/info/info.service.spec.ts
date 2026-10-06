@@ -1,5 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 
+const { pushEvent } = vi.hoisted(() => ({ pushEvent: vi.fn() }));
+
+vi.mock('../hatchet/client.js', () => ({
+  hatchet: { events: { push: pushEvent } },
+}));
+
 import { InfoService } from './info.service.js';
 
 describe('InfoService', () => {
@@ -10,7 +16,7 @@ describe('InfoService', () => {
         expiresAt: new Date('2026-10-01T00:00:00.000Z'),
       }),
     };
-    const service = new InfoService({} as never, links as never, {} as never);
+    const service = new InfoService({} as never, links as never);
 
     await expect(service.getProfile('active-token')).resolves.toEqual({
       personId: 'person-1',
@@ -18,14 +24,11 @@ describe('InfoService', () => {
     });
   });
 
-  it('saves Info with the link personId and completes the Person', async () => {
+  it('publishes profile.completed for the person from the active link', async () => {
     const links = {
       requireActive: vi.fn().mockResolvedValue({ personId: 'person-1' }),
-      markUsed: vi.fn().mockResolvedValue(undefined),
     };
-    const personClient = { markProfileCompleted: vi.fn().mockResolvedValue(undefined) };
-    const prisma = { info: { create: vi.fn().mockResolvedValue({ id: 'profile-1' }) } };
-    const service = new InfoService(prisma as never, links as never, personClient as never);
+    const service = new InfoService({} as never, links as never);
 
     const result = await service.submit('token-1', {
       firstName: 'Ada',
@@ -33,7 +36,16 @@ describe('InfoService', () => {
       personalStatement: 'Engineer',
     });
 
-    expect(result).toEqual({ profileId: 'profile-1', personId: 'person-1' });
-    expect(personClient.markProfileCompleted).toHaveBeenCalledWith('person-1');
+    expect(result).toEqual({ personId: 'person-1' });
+    expect(pushEvent).toHaveBeenCalledWith(
+      'profile.completed',
+      {
+        personId: 'person-1',
+        firstName: 'Ada',
+        lastName: 'Lovelace',
+        personalStatement: 'Engineer',
+      },
+      { scope: 'person:person-1' },
+    );
   });
 });

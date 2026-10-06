@@ -1,12 +1,14 @@
 import { Module } from '@nestjs/common';
 
-import { AuthService } from '../auth/auth.service.js';
-import { PrismaService } from '../prisma/prisma.service.js';
-import { RegistrationController } from './registration.controller.js';
-import { RegistrationService } from './registration.service.js';
+import { RegistrationController } from './registration.controller';
+import { RegistrationService } from './registration.service';
+import { HatchetModule } from '../hatchet/hatchet.module';
+import { AuthModule } from '../auth/auth.module';
+import { PrismaModule } from '../prisma/prisma.module';
 
 @Module({
+  imports: [HatchetModule, AuthModule, PrismaModule],
   controllers: [RegistrationController],
-  providers: [RegistrationService, PrismaService, AuthService],
+  providers: [RegistrationService],
 })
 export class RegistrationModule {}

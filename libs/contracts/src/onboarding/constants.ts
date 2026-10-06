@@ -8,5 +8,3 @@ export type AwaitProfileOutput =
   { timedOut: false; profileId: string } | { timedOut: true; profileId: null };
 
 export type MarkCompletedOutput = { isProfileCompleted: boolean };
-export type SendReminderOutput = { reminded: boolean };
-export type SendWelcomeOutput = { welcomed: boolean };

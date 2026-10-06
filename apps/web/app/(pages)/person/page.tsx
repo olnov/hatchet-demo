@@ -13,10 +13,12 @@ export default function Person() {
     e.preventDefault();
     try {
       const registration = await registerPerson({ email, password });
-      router.push(`/invite?personId=${registration.personId}`);
+      router.push(`/invite?runId=${registration.runId}`);
     } catch (error) {
-      console.error('Error creating person:', error);
-      alert(`Не удалось зарегистрироваться: ${error.message}`);
+      if (error instanceof Error) {
+        console.error('Error creating person:', error);
+        alert(`Не удалось зарегистрироваться: ${error.message}`);
+      }
     }
   };
 

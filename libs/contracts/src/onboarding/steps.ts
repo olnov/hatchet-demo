@@ -9,8 +9,6 @@ export const STEP = {
   issueLink: 'issue-onboarding-link',
   awaitProfile: 'await-and-save-profile',
   markCompleted: 'mark-profile-completed',
-  sendReminder: 'send-reminder',
-  sendWelcome: 'send-welcome',
 } as const;
 
 // Ключ label, по которому Hatchet выбирает worker для конкретного шага.
@@ -22,8 +20,6 @@ export const STEP_OWNER = {
   [STEP.issueLink]: 'person',
   [STEP.awaitProfile]: 'profile',
   [STEP.markCompleted]: 'person',
-  [STEP.sendReminder]: 'person',
-  [STEP.sendWelcome]: 'person',
 } as const satisfies Record<string, 'person' | 'profile'>;
 
 // Превращает владельца шага в обязательный фильтр worker label.
